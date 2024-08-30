@@ -9,13 +9,13 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-type OrderPublisher struct {
+type OrderProducer struct {
 	ch *amqp.Channel
 }
 
 var ExchangeOrderName = "order_event_exchange"
 
-func NewOrderPublisher(conn *amqp.Connection) (*OrderPublisher, error) {
+func NewOrderProducer(conn *amqp.Connection) (*OrderProducer, error) {
 	ch, err := conn.Channel()
 	if err != nil {
 		slog.Error("Failed to create a channel", "error", err.Error())
@@ -41,13 +41,13 @@ func NewOrderPublisher(conn *amqp.Connection) (*OrderPublisher, error) {
 		return nil, err
 	}
 
-	return &OrderPublisher{
+	return &OrderProducer{
 		ch: ch,
 	}, nil
 }
 
 // if queue already created, this will not affect.
-func (op *OrderPublisher) CreateQueue(name string, opts ...Option) error {
+func (op *OrderProducer) CreateQueue(name string, opts ...Option) error {
 	queueCfg := defaultConfig
 
 	for _, opt := range opts {
@@ -66,11 +66,11 @@ func (op *OrderPublisher) CreateQueue(name string, opts ...Option) error {
 	return err
 }
 
-func (op *OrderPublisher) QueueBind(queueName string, routingKey string) error {
+func (op *OrderProducer) QueueBind(queueName string, routingKey string) error {
 	return op.ch.QueueBind(queueName, routingKey, ExchangeOrderName, false, nil)
 }
 
-func (op *OrderPublisher) publish(routingKey string, content []byte, contentType string) error {
+func (op *OrderProducer) publish(routingKey string, content []byte, contentType string) error {
 	return op.ch.Publish(
 		ExchangeOrderName,
 		routingKey,
@@ -83,7 +83,7 @@ func (op *OrderPublisher) publish(routingKey string, content []byte, contentType
 	)
 }
 
-func (op *OrderPublisher) PublishLog(order *Order) error {
+func (op *OrderProducer) PublishLog(order *Order) error {
 	return op.publish("log.orders", createLogContent(order), "application/json")
 }
 
@@ -110,7 +110,7 @@ func createLogContent(order *Order) []byte {
 	return jsonData
 }
 
-func (op *OrderPublisher) PublishUserNotification(order *Order) error {
+func (op *OrderProducer) PublishUserNotification(order *Order) error {
 	return op.publish("notify.users", createUserNotification(order), "application/json")
 }
 
@@ -133,7 +133,7 @@ func createUserNotification(order *Order) []byte {
 	return jsonData
 }
 
-func (op *OrderPublisher) PublishSellerNotification(order *Order) error {
+func (op *OrderProducer) PublishSellerNotification(order *Order) error {
 	return op.publish("notify.sellers", createSellerNotification(order), "application/json")
 }
 
