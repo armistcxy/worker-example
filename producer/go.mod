@@ -1,4 +1,4 @@
-module pub
+module producer
 
 go 1.23.0
 

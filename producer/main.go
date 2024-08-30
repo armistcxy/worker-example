@@ -25,7 +25,7 @@ func main() {
 	}
 	defer conn.Close()
 
-	orderPub, err := NewOrderPublisher(conn)
+	orderPub, err := NewOrderProducer(conn)
 	if err != nil {
 		slog.Error("", "error", err.Error())
 		log.Fatal("Failed to create order publisher")
